@@ -10,6 +10,8 @@
 #define RADIO_TUNER_TIMER_REG_OFFSET 3
 #define RADIO_PERIPH_ADDRESS 0x43c00000
 
+#define AXI_CLOCK_PERIOD (1 / 125E6)
+
 // the below code uses a device called /dev/mem to get a pointer to a physical
 // address.  We will use this pointer to read/write the custom peripheral
 volatile unsigned int * get_a_pointer(unsigned int phys_addr)
@@ -55,15 +57,21 @@ void print_benchmark(volatile unsigned int *periph_base)
     unsigned int start_time;
     unsigned int stop_time;
     start_time = *(periph_base+RADIO_TUNER_TIMER_REG_OFFSET);
-    for (int i=0;i<2048;i++)
+
+    unsigned int NUM_SAMPLES = 2048;
+
+    for (int i = 0; i < NUM_SAMPLES; ++i) {
         stop_time = *(periph_base+RADIO_TUNER_TIMER_REG_OFFSET);
+    }
     printf("Elapsed time in clocks = %u\n",stop_time-start_time);
-    float throughput=0; 
     // please insert your code here for calculate the actual throughput in Mbytes/second
     // how much data was transferred? How long did it take?
-    unsigned int bytes_transferred = 0; // change obviously
-    float time_spent = 1; // change obviously
-    printf("You transferred %f bytes of data in %f seconds\n",bytes_transferred,time_spent);
+    unsigned int bytes_transferred = NUM_SAMPLES * sizeof(stop_time); 
+    float time_spent = (stop_time - start_time) * AXI_CLOCK_PERIOD;
+
+    float throughput = bytes_transferred / time_spent;
+    
+    printf("You transferred %u bytes of data in %f seconds\n",bytes_transferred,time_spent);
     printf("Measured Transfer throughput = %f Mbytes/sec\n",throughput);
 }
 
@@ -73,7 +81,7 @@ int main()
 // first, get a pointer to the peripheral base address using /dev/mem and the function mmap
     volatile unsigned int *my_periph = get_a_pointer(RADIO_PERIPH_ADDRESS);	
 
-    printf("\r\n\r\n\r\nLab 6 YOURNAME - Custom Peripheral Demonstration\n\r");
+    printf("\r\n\r\n\r\nLab 7 Tyler Aubin - Custom Peripheral Demonstration\n\r");
     *(my_periph+RADIO_TUNER_CONTROL_REG_OFFSET) = 0; // make sure radio isn't in reset
     printf("Tuning Radio to 30MHz\n\r");
     radioTuner_tuneRadio(my_periph,30e6);
